@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
 
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import time
 import datetime
 import random
-import ssl
-import jwt
-import json
 import threading
 
 # GPIO SETUP
-channel = 21
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(channel, GPIO.IN)
+humdity_channel = 21
+pump_channel = 8
+light_channel = 22
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(humdity_channel, GPIO.IN)
+GPIO.setup(pump_channel, GPIO.OUT)
+GPIO.output(pump_channel, GPIO.LOW)
+GPIO.setup(light_channel, GPIO.OUT)
+GPIO.output(light_channel, GPIO.LOW)
+
+def setPinLow(channel):
+    GPIO.output(channel, GPIO.LOW)
+
+def setPinHigh(channel):
+    GPIO.output(channel, GPIO.HIGH)
 
 class DeviceControl(threading.Thread):
     """The device control object polls the humidity sensor and controls pump and light activity based on config values
@@ -29,6 +39,8 @@ class DeviceControl(threading.Thread):
         self.stopEvent = stopEvent
         self.dataProvider = dataProvider
         self.configurationProvider = configurationProvider
+
+        # internal state values
         self.lightActivated = False
         self.pumpActivated = False
         now = datetime.datetime.now().time()
@@ -39,28 +51,34 @@ class DeviceControl(threading.Thread):
         # GPIO.add_event_callback(channel, self.callback)  # assign function to GPIO PIN, Run function on change
 
     def makeTime(self, hhMidateStr):
+        """Make a time object based on a string"""
         t = time.strptime(hhMidateStr,"%H:%M")
         return datetime.time(hour=t.tm_hour,minute=t.tm_min,second=t.tm_sec)
 
     def addSecs(self, tm, secs):
+        """Add secs to a time object"""
         fulldate = datetime.datetime(100, 1, 1, tm.hour, tm.minute, tm.second)
         fulldate = fulldate + datetime.timedelta(seconds=secs)
         return fulldate.time()
 
     def activateLight(self):
+        """Activate or deactivate light based on configured start & end time"""
         startTime = self.makeTime(self.configurationProvider.getParam('lightning_start'))
         endTime = self.makeTime(self.configurationProvider.getParam('lightning_end'))
         now = datetime.datetime.now().time()
         if (not self.lightActivated):
             if (now > startTime and now < endTime):
-                print('Light activated at '+str(now))
+                setPinHigh(light_channel)
                 self.lightActivated = True
+                print('Light activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
-                print('Light deactivated at '+str(now))
+                setPinLow(light_channel)
                 self.lightActivated = False
+                print('Light deactivated at '+str(now))
 
     def activatePump(self, humidity):
+        """Activate or deactivate pump based on threshold and lag value"""
         th = self.configurationProvider.getParam('humidity_threshold')
         lag = self.configurationProvider.getParam('humidity_threshold_lag')
         now = datetime.datetime.now().time()
@@ -74,6 +92,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedBelow, lag)
                 if (not self.pumpActivated and lagUntil < now):
+                    setPinHigh(pump_channel)
                     self.pumpActivated = True
                     self.humRaisedBelow = now
                     print('humRaisedBelow='+str(self.humRaisedBelow)+', lagUntil='+str(lagUntil))
@@ -87,6 +106,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedAbove, lag)
                 if (self.pumpActivated and lagUntil < now):
+                    setPinLow(pump_channel)
                     self.pumpActivated = False
                     self.humRaisedAbove = now
                     print('humRaisedAbove='+str(self.humRaisedAbove)+', lagUntil='+str(lagUntil))
@@ -94,16 +114,21 @@ class DeviceControl(threading.Thread):
 
 
     def run(self):
+        """The main loop"""
         print("DeviceControl starting ")
         while (not self.stopEvent.is_set()):
-            # TODO: remove test data on pi
-            humidity = random.randint(50,70)
+
+            # --- TODO: remove test data on pi ---
+            # humidity = random.randint(50,70)
+            humidity = 48
+            # ---
 
             self.activateLight()
             self.activatePump(humidity)
             self.dataProvider.setData(humidity, self.pumpActivated, self.lightActivated)
             time.sleep(self.configurationProvider.getParam('device_poll_interval'))
             # print(str(datetime.datetime.now().time())+' Polling...')
+
         print('DeviceControl stopped')
 
 def callback(self, channel):
