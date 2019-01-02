@@ -55,8 +55,6 @@ class ConfigurationProvider:
 
     def write(self, config):
         'Write received configuration to internal cache and save it to disk '
-        print('Config message received: \'{}\''.format(json.dumps(config, sort_keys=True, indent=4)))
-
         unmatched_item = set(config.items()) ^ set(self.config.items())
         # write if changed
         if len(unmatched_item) != 0:

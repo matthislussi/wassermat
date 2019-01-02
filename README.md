@@ -107,6 +107,21 @@ file
 - default pwd changed (passwd)
 - adjust timezone: sudo raspi-config
 
+### install python 3.6.7
+```
+sudo apt-get install build-essential checkinstall
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
+
+cd /usr/bin
+sudo tar xzf Python-3.6.7.tgz
+sudo bash
+cd Python-3.6.7
+./configure
+make -j4
+make altinstall
+
+```
+
 ### get sources
 - sudo apt-get install git
 - git clone https://github.com/hlussi/wassermat.git
@@ -114,9 +129,8 @@ file
 
 ### create virtual env
 - cd pi
-- apt-get install python3-venv
-- python3 -m venv env
+- sudo apt-get install python3-venv libffi-dev
+- python3.6 -m venv env
 - env/bin/pip install -U pip setuptools wheel
 - source env/bin/activate
 - pip install -r requirements.txt
-- pip install RPi.GPIO
