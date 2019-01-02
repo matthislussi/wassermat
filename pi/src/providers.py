@@ -58,10 +58,10 @@ class ConfigurationProvider:
         unmatched_item = set(config.items()) ^ set(self.config.items())
         # write if changed
         if len(unmatched_item) != 0:
+            print('Config has changed, persisting new version: \'{}\''.format(json.dumps(config, sort_keys=True, indent=4)))
             self.config = config
             with open(self.cfg_file, 'w') as outfile:
                 json.dump(config, outfile)
-            print('Config changed, new version persisted: \'{}\''.format(json.dumps(config, sort_keys=True, indent=4)))
 
     def read(self):
         'Load internal cache from disk and return it to caller'

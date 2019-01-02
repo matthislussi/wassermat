@@ -105,3 +105,18 @@ file
 ## Config Raspberry
 
 - default pwd changed (passwd)
+- adjust timezone: sudo raspi-config
+
+### get sources
+- sudo apt-get install git
+- git clone https://github.com/hlussi/wassermat.git
+- cd wassermat
+
+### create virtual env
+- cd pi
+- apt-get install python3-venv
+- python3 -m venv env
+- env/bin/pip install -U pip setuptools wheel
+- source env/bin/activate
+- pip install -r requirements.txt
+- pip install RPi.GPIO
