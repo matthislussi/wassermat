@@ -104,8 +104,9 @@ class GcpIotClient (threading.Thread):
         """Callback when the device receives a message on a subscription."""
         global config
         if (message.topic == '/devices/raspi1/config'):
-            print('Config messag received')
             self.configurationProvider.write(json.loads(message.payload))
+        else:
+            print('on_message: message topic "'+message.topic+'" not handled')
 
 
     def get_client(self, project_id, cloud_region, registry_id, device_id, private_key_file,
