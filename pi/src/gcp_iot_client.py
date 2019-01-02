@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import datetime
 import random
 import ssl
@@ -104,7 +105,11 @@ class GcpIotClient (threading.Thread):
         """Callback when the device receives a message on a subscription."""
         global config
         if (message.topic == '/devices/raspi1/config'):
-            self.configurationProvider.write(json.loads(message.payload))
+            try:
+                self.configurationProvider.write(json.loads(message.payload))
+            except:
+                print("on_message, unexpected error:", sys.exc_info()[0])
+                raise
         else:
             print('on_message: message topic "'+message.topic+'" not handled')
 
