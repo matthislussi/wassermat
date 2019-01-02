@@ -108,7 +108,7 @@ class GcpIotClient (threading.Thread):
             try:
                 self.configurationProvider.write(json.loads(message.payload))
             except:
-                print("on_message, unexpected error:", sys.exc_info()[0])
+                print("on_message, unexpected error: {} / payload={}".format(sys.exc_info()[0]), message.payload)
                 raise
         else:
             print('on_message: message topic "'+message.topic+'" not handled')
