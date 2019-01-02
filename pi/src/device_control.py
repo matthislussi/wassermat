@@ -7,16 +7,34 @@ import random
 import threading
 
 # GPIO SETUP
-humdity_channel = 21
-pump_channel = 8
-light_channel = 22
+GPIO_PUMP = 8
+GPIO_LIGHT = 22
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-GPIO.setup(humdity_channel, GPIO.IN)
-GPIO.setup(pump_channel, GPIO.OUT)
-GPIO.output(pump_channel, GPIO.LOW)
-GPIO.setup(light_channel, GPIO.OUT)
-GPIO.output(light_channel, GPIO.LOW)
+GPIO.setup(GPIO_PUMP, GPIO.OUT)
+GPIO.output(GPIO_PUMP, GPIO.LOW)
+GPIO.setup(GPIO_LIGHT, GPIO.OUT)
+GPIO.output(GPIO_LIGHT, GPIO.LOW)
+
+# --- sensor SPI configuration (MCP3008) ---
+# see https://learn.adafruit.com/reading-a-analog-in-and-controlling-audio-volume-with-the-raspberry-pi/script
+
+# SPI port on the ADC to the Cobbler
+SPICLK = 18
+SPIMISO = 23
+SPIMOSI = 24
+SPICS = 25
+
+# set up the SPI interface pins
+GPIO.setup(SPIMOSI, GPIO.OUT)
+GPIO.setup(SPIMISO, GPIO.IN)
+GPIO.setup(SPICLK, GPIO.OUT)
+GPIO.setup(SPICS, GPIO.OUT)
+
+# humidity sensor connected to adc #0
+sensor_adc = 0;
+
+# --- END sensor SPI configuration (MCP3008) ---
 
 def setPinLow(channel):
     GPIO.output(channel, GPIO.LOW)
@@ -47,9 +65,6 @@ class DeviceControl(threading.Thread):
         self.humRaisedAbove = now
         self.humRaisedBelow = now
 
-        # GPIO.add_event_detect(channel, GPIO.BOTH, bouncetime=300)  # let us know when the pin goes HIGH or LOW
-        # GPIO.add_event_callback(channel, self.callback)  # assign function to GPIO PIN, Run function on change
-
     def makeTime(self, hhMidateStr):
         """Make a time object based on a string"""
         t = time.strptime(hhMidateStr,"%H:%M")
@@ -68,12 +83,12 @@ class DeviceControl(threading.Thread):
         now = datetime.datetime.now().time()
         if (not self.lightActivated):
             if (now > startTime and now < endTime):
-                setPinHigh(light_channel)
+                setPinHigh(GPIO_LIGHT)
                 self.lightActivated = True
                 print('Light activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
-                setPinLow(light_channel)
+                setPinLow(GPIO_LIGHT)
                 self.lightActivated = False
                 print('Light deactivated at '+str(now))
 
@@ -92,7 +107,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedBelow, lag)
                 if (not self.pumpActivated and lagUntil < now):
-                    setPinHigh(pump_channel)
+                    setPinHigh(GPIO_PUMP)
                     self.pumpActivated = True
                     self.humRaisedBelow = now
                     print('humRaisedBelow='+str(self.humRaisedBelow)+', lagUntil='+str(lagUntil))
@@ -106,11 +121,47 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedAbove, lag)
                 if (self.pumpActivated and lagUntil < now):
-                    setPinLow(pump_channel)
+                    setPinLow(GPIO_PUMP)
                     self.pumpActivated = False
                     self.humRaisedAbove = now
                     print('humRaisedAbove='+str(self.humRaisedAbove)+', lagUntil='+str(lagUntil))
                     print('humidity is '+str(humidity)+', pump deactivated at '+str(now))
+
+
+    # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
+    def readadc(self, adcnum, clockpin, mosipin, misopin, cspin):
+        if ((adcnum > 7) or (adcnum < 0)):
+            return -1
+
+        GPIO.output(cspin, True)
+        GPIO.output(clockpin, False)  # start clock low
+        GPIO.output(cspin, False)     # bring CS low
+
+        commandout = adcnum
+        commandout |= 0x18  # start bit + single-ended bit
+        commandout <<= 3    # we only need to send 5 bits here
+        for i in range(5):
+            if (commandout & 0x80):
+                GPIO.output(mosipin, True)
+            else:
+                GPIO.output(mosipin, False)
+            commandout <<= 1
+            GPIO.output(clockpin, True)
+            GPIO.output(clockpin, False)
+
+        adcout = 0
+        # read in one empty bit, one null bit and 10 ADC bits
+        for i in range(12):
+            GPIO.output(clockpin, True)
+            GPIO.output(clockpin, False)
+            adcout <<= 1
+            if (GPIO.input(misopin)):
+                adcout |= 0x1
+
+        GPIO.output(cspin, True)
+
+        adcout >>= 1       # first bit is 'null' so drop it
+        return adcout
 
 
     def run(self):
@@ -118,22 +169,21 @@ class DeviceControl(threading.Thread):
         print("DeviceControl starting ")
         while (not self.stopEvent.is_set()):
 
-            # --- TODO: remove test data on pi ---
+            # read the analog pin
+            hsense = self.readadc(sensor_adc, SPICLK, SPIMOSI, SPIMISO, SPICS)
+            set_humidity = hsense / 10.24        # convert 10bit adc0 (0-1024) sensor out read into 0-100 level
+            set_humidity = round(set_humidity)   # round out decimal value
+            humidity = int(set_humidity)         # cast volume as integer
+
+            # test data
             # humidity = random.randint(50,70)
-            humidity = 48
-            # ---
+            # humidity = 48
+            print(str(datetime.datetime.now().time())+' humidity='+str(humidity))
 
             self.activateLight()
             self.activatePump(humidity)
             self.dataProvider.setData(humidity, self.pumpActivated, self.lightActivated)
             time.sleep(self.configurationProvider.getParam('device_poll_interval'))
-            # print(str(datetime.datetime.now().time())+' Polling...')
 
         print('DeviceControl stopped')
 
-def callback(self, channel):
-        print('Callback called')
-        # if GPIO.input(channel):
-        #     print("Water Detected!")
-        # else:
-        #     print("Water Detected!")
