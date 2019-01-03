@@ -1,41 +1,51 @@
 ## Resources
 
-repository: https://github.com/hlussi/wassermat.git
+this repository: ```https://github.com/hlussi/wassermat.git```
+
 
 ### GCP
-- https://medium.com/google-cloud/build-a-weather-station-using-google-cloud-iot-core-and-mongooseos-7a78b69822c5
-- https://github.com/GoogleCloudPlatform/python-docs-samples.git
+```
+https://medium.com/google-cloud/build-a-weather-station-using-google-cloud-iot-core-and-mongooseos-7a78b69822c5
+https://github.com/GoogleCloudPlatform/python-docs-samples.git
+```
 
 ### Raspi
-- https://computers.tutsplus.com/tutorials/build-a-raspberry-pi-moisture-sensor-to-monitor-your-plants--mac-52875
-- https://learn.adafruit.com/reading-a-analog-in-and-controlling-audio-volume-with-the-raspberry-pi/overview
+```
+https://computers.tutsplus.com/tutorials/build-a-raspberry-pi-moisture-sensor-to-monitor-your-plants--mac-52875
+https://learn.adafruit.com/reading-a-analog-in-and-controlling-audio-volume-with-the-raspberry-pi/overview
+```
 
 
 ## google cloud sdk
 
 - download from google
-- cd ~/stash/projects.ext/google-cloud-sdk/
-- ./install.sh
+```
+cd ~/stash/projects.ext/google-cloud-sdk/
+./install.sh
+```
 
 
 ## pyenv
-
-- brew install pyenv
-- brew install pyenv-virtualenv
-- pyenv virtualenv 3.6.7 wassermat
-- pyenv local wassermat
-- pip install --proxy http://proxy.adnovum.ch:3128 -r requirements.txt
+```
+brew install pyenv
+brew install pyenv-virtualenv
+pyenv virtualenv 3.6.7 wassermat
+pyenv local wassermat
+pip install --proxy http://proxy.adnovum.ch:3128 -r requirements.txt
+```
 
 
 ## Firebase installation & configuration
 
 - project=wassermat
-- npm install -g firebase-tools
-- firebase login
-- firebase init
-- firebase functions:config:set bigquery.datasetname="wassermat_iot" bigquery.tablename="raw_data"
-- firebase deploy --only functions
-- firebase functions:config:get
+```
+npm install -g firebase-tools
+firebase login
+firebase init
+firebase functions:config:set bigquery.datasetname="wassermat_iot" bigquery.tablename="raw_data"
+firebase deploy --only functions
+firebase functions:config:get
+```
 
 
 ## Big Query configuration
@@ -123,14 +133,18 @@ make altinstall
 ```
 
 ### get sources
-- sudo apt-get install git
-- git clone https://github.com/hlussi/wassermat.git
-- cd wassermat
+```
+sudo apt-get install git
+git clone https://github.com/hlussi/wassermat.git
+cd wassermat
+```
 
 ### create virtual env
-- cd pi
-- sudo apt-get install python3-venv libffi-dev
-- python3.6 -m venv env
-- env/bin/pip install -U pip setuptools wheel
-- source env/bin/activate
-- pip install -r requirements.txt
+```
+cd pi
+sudo apt-get install python3-venv libffi-dev
+python3.6 -m venv env
+env/bin/pip install -U pip setuptools wheel
+source env/bin/activate
+pip install -r requirements.txt
+```
