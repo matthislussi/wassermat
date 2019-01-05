@@ -12,8 +12,9 @@ GPIO_LIGHT = 22
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(GPIO_PUMP, GPIO.OUT)
-GPIO.output(GPIO_PUMP, GPIO.LOW)
 GPIO.setup(GPIO_LIGHT, GPIO.OUT)
+
+GPIO.output(GPIO_PUMP, GPIO.LOW)
 GPIO.output(GPIO_LIGHT, GPIO.LOW)
 
 # --- sensor SPI configuration (MCP3008) ---
@@ -36,20 +37,23 @@ sensor_adc = 0;
 
 # --- END sensor SPI configuration (MCP3008) ---
 
-def setPinLow(channel):
+def stopDevice(channel):
     GPIO.output(channel, GPIO.LOW)
 
-def setPinHigh(channel):
+def startDevice(channel):
     GPIO.output(channel, GPIO.HIGH)
 
 class DeviceControl(threading.Thread):
-    """The device control object polls the humidity sensor and controls pump and light activity based on config values
-    The following configurationProvider config values are consumed:
-    - device_poll_interval: poll interval in sec. (eg. 50ms -> 0.05)
-    - humidity_threshold: water pump is activated when humidity level falls below this value (in %)
-    - humidity_threshold_lag: humidity level must stay below the threshold for this time (in sec.) before the pump is activated
-    - lightning_start: lightning start time in format hh:mm
-    - lightning_end": lightning end time in format hh:mm
+    """The device control object polls the humidity sensor and controls pump and light activity based on these config values:
+	- device_poll_interval: poll interval in sec. (eg. 50ms -> 0.05)
+	- watering_scheme: fixed or dynamic (see below)
+	- watering_threshold: if watering_scheme is fixed: watering is skipped if humidity is above this % level
+	                      if watering_scheme is dynamic: water pump is activated when humidity level falls below this % value
+	- watering_threshold_lag: humidity level must stay below the threshold for sec. before watering starts (dynamic scheme only)
+	- watering_start: watering starts at this time in format hh:mi (fixed scheme only)
+	- watering_duration: watering duration in sec. (fixed scheme only)
+	- lightning_start: ightning start time in format hh:mm
+	- lightning_end: lightning end time in format hh:mm
     """
 
     def __init__(self, dataProvider, configurationProvider, stopEvent):
@@ -83,19 +87,36 @@ class DeviceControl(threading.Thread):
         now = datetime.datetime.now().time()
         if (not self.lightActivated):
             if (now > startTime and now < endTime):
-                setPinHigh(GPIO_LIGHT)
+                startDevice(GPIO_LIGHT)
                 self.lightActivated = True
                 print('Light activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
-                setPinLow(GPIO_LIGHT)
+                stopDevice(GPIO_LIGHT)
                 self.lightActivated = False
                 print('Light deactivated at '+str(now))
 
-    def activatePump(self, humidity):
+    def activatePumpFixed(self):
+        """Activate or deactivate pump based on configured start & duration time"""
+        startTime = self.makeTime(self.configurationProvider.getParam('watering_start'))
+        endTime = self.addSecs(startTime, self.configurationProvider.getParam('watering_duration'))
+        print('fixed watering scheme from '+str(startTime)+' to '+str(endTime))
+        now = datetime.datetime.now().time()
+        if (not self.pumpActivated):
+            if (now > startTime and now < endTime):
+                startDevice(GPIO_PUMP)
+                self.lightActivated = True
+                print('Pump activated at '+str(now))
+        else:
+            if (now < startTime or now > endTime):
+                stopDevice(GPIO_PUMP)
+                self.lightActivated = False
+                print('Pump deactivated at '+str(now))
+
+    def activatePumpDynamic(self, humidity):
         """Activate or deactivate pump based on threshold and lag value"""
-        th = self.configurationProvider.getParam('humidity_threshold')
-        lag = self.configurationProvider.getParam('humidity_threshold_lag')
+        th = self.configurationProvider.getParam('watering_threshold')
+        lag = self.configurationProvider.getParam('watering_threshold_lag')
         now = datetime.datetime.now().time()
 
         if (humidity < th):
@@ -107,7 +128,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedBelow, lag)
                 if (not self.pumpActivated and lagUntil < now):
-                    setPinHigh(GPIO_PUMP)
+                    startDevice(GPIO_PUMP)
                     self.pumpActivated = True
                     self.humRaisedBelow = now
                     print('humRaisedBelow='+str(self.humRaisedBelow)+', lagUntil='+str(lagUntil))
@@ -121,7 +142,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedAbove, lag)
                 if (self.pumpActivated and lagUntil < now):
-                    setPinLow(GPIO_PUMP)
+                    stopDevice(GPIO_PUMP)
                     self.pumpActivated = False
                     self.humRaisedAbove = now
                     print('humRaisedAbove='+str(self.humRaisedAbove)+', lagUntil='+str(lagUntil))
@@ -175,15 +196,20 @@ class DeviceControl(threading.Thread):
             set_humidity = round(set_humidity)   # round out decimal value
             humidity = int(set_humidity)         # cast volume as integer
 
-            # test data
-            # humidity = random.randint(50,70)
-            # humidity = 48
             print(str(datetime.datetime.now().time())+' humidity='+str(humidity))
 
+            if self.configurationProvider.getParam('watering_threshold') == 'dynamic':
+                self.activatePumpDynamic(humidity)
+            else:
+                self.activatePumpFixed(humidity)
             self.activateLight()
-            self.activatePump(humidity)
+
             self.dataProvider.setData(humidity, self.pumpActivated, self.lightActivated)
             time.sleep(self.configurationProvider.getParam('device_poll_interval'))
+
+        # turn off devices
+        stopDevice(GPIO_LIGHT)
+        stopDevice(GPIO_PUMP)
 
         print('DeviceControl stopped')
 

@@ -32,18 +32,10 @@ MAXIMUM_BACKOFF_TIME = 32
 # Whether to wait with exponential backoff before publishing.
 should_backoff = False
 
-# initial application configuration (overwritable from gcp)
-
-# {
-#     "gcp_send_interval": 3,
-#     "humidity_threshold": 40,
-#     "humidity_threshold_lag": 10,
-#     "lightning_start": "08:00",
-#     "lightning_end": "20:00"
-# }
-
 class GcpIotClient (threading.Thread):
-    'The Google Clout IOT core client thread'
+    """The GcpIotClient object publishes data to and receives config changes from the Google Cloud using the mqtt protocol
+    The data send interval is controlled by the configuration value 'gcp_send_interval'
+    """
 
     def __init__(self, dataProvider, configurationProvider, stopEvent):
         super(GcpIotClient, self).__init__()
