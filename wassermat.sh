@@ -16,6 +16,7 @@
 cd /home/pi/wassermat/pi
 source env/bin/activate
 cd src
-./wassermat.py > ../../wassermat.log 2>&1
+# logging: journalctl -u wassermat -b
+./wassermat.py
 
 
