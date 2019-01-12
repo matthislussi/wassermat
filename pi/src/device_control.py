@@ -47,7 +47,7 @@ class DeviceControl(threading.Thread):
     """The device control object polls the humidity sensor and controls pump and light activity based on these config values:
 	- device_poll_interval: poll interval in sec. (eg. 50ms -> 0.05)
 	- watering_scheme: fixed or dynamic (see below)
-	- watering_threshold: if watering_scheme is fixed: watering is skipped if humidity is above this % level
+	- watering_threshold: if watering_scheme is fix: watering is skipped if humidity is above this % level
 	                      if watering_scheme is dynamic: water pump is activated when humidity level falls below this % value
 	- watering_threshold_lag: humidity level must stay below the threshold for sec. before watering starts (dynamic scheme only)
 	- watering_start: watering starts at this time in format hh:mi (fixed scheme only)
