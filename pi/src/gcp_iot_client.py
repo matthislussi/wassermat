@@ -193,7 +193,7 @@ class GcpIotClient (threading.Thread):
 
             seconds_since_issue = (datetime.datetime.utcnow() - jwt_iat).seconds
             if seconds_since_issue > 60 * jwt_exp_mins:
-                print('Refreshing token after {}s').format(seconds_since_issue)
+                print('Refreshing token after {}s'.format(seconds_since_issue))
                 jwt_iat = datetime.datetime.utcnow()
                 client = self.get_client(
                     project_id, cloud_region,

@@ -140,3 +140,10 @@ pip install -r requirements.txt
  WantedBy=multi-user.target
 ```
 
+- enable service
+```
+sudo chmod 644 /lib/systemd/system/wassermat.service
+sudo systemctl daemon-reload
+sudo systemctl enable wassermat.service
+sudo reboot
+```
