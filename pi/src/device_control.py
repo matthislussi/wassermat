@@ -14,9 +14,15 @@ GPIO.setwarnings(False)
 GPIO.setup(GPIO_PUMP, GPIO.OUT)
 GPIO.setup(GPIO_LIGHT, GPIO.OUT)
 
+PUMP_ON = GPIO.LOW
+PUMP_OFF = GPIO.HIGH
+LIGHT_ON = GPIO.HIGH
+LIGHT_OFF = GPIO.LOW
+
 # HIGH is off, LOW is on
-GPIO.output(GPIO_PUMP, GPIO.HIGH)
-GPIO.output(GPIO_LIGHT, GPIO.HIGH)
+GPIO.output(GPIO_PUMP, PUMP_OFF)
+# HIGH is off, LOW is on
+GPIO.output(GPIO_LIGHT, LIGHT_OFF)
 
 # --- sensor SPI configuration (MCP3008) ---
 # see https://learn.adafruit.com/reading-a-analog-in-and-controlling-audio-volume-with-the-raspberry-pi/script
@@ -37,12 +43,17 @@ GPIO.setup(SPICS, GPIO.OUT)
 sensor_adc = 0;
 
 # --- END sensor SPI configuration (MCP3008) ---
+def startLight():
+    GPIO.output(GPIO_LIGHT, LIGHT_ON)
 
-def stopDevice(channel):
-    GPIO.output(channel, GPIO.HIGH)
+def stopLight():
+    GPIO.output(GPIO_LIGHT, LIGHT_OFF)
 
-def startDevice(channel):
-    GPIO.output(channel, GPIO.LOW)
+def startPump():
+    GPIO.output(GPIO_PUMP, PUMP_ON)
+
+def stopPump():
+    GPIO.output(GPIO_PUMP, PUMP_OFF)
 
 class DeviceControl(threading.Thread):
     """The device control object polls the humidity sensor and controls pump and light activity based on these config values:
@@ -88,12 +99,12 @@ class DeviceControl(threading.Thread):
         now = datetime.datetime.now().time()
         if (not self.lightActivated):
             if (now > startTime and now < endTime):
-                startDevice(GPIO_LIGHT)
+                startLight()
                 self.lightActivated = True
                 print('Light activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
-                stopDevice(GPIO_LIGHT)
+                stopLight()
                 self.lightActivated = False
                 print('Light deactivated at '+str(now))
 
@@ -105,12 +116,12 @@ class DeviceControl(threading.Thread):
         now = datetime.datetime.now().time()
         if (not self.pumpActivated):
             if (now > startTime and now < endTime):
-                startDevice(GPIO_PUMP)
+                startPump()
                 self.pumpActivated = True
                 print('Pump activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
-                stopDevice(GPIO_PUMP)
+                stopPump()
                 self.pumpActivated = False
                 print('Pump deactivated at '+str(now))
 
@@ -129,7 +140,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedBelow, lag)
                 if (not self.pumpActivated and lagUntil < now):
-                    startDevice(GPIO_PUMP)
+                    startPump()
                     self.pumpActivated = True
                     self.humRaisedBelow = now
                     print('humRaisedBelow='+str(self.humRaisedBelow)+', lagUntil='+str(lagUntil))
@@ -143,7 +154,7 @@ class DeviceControl(threading.Thread):
                 # during below threshold phase
                 lagUntil = self.addSecs(self.humRaisedAbove, lag)
                 if (self.pumpActivated and lagUntil < now):
-                    stopDevice(GPIO_PUMP)
+                    stopPump()
                     self.pumpActivated = False
                     self.humRaisedAbove = now
                     print('humRaisedAbove='+str(self.humRaisedAbove)+', lagUntil='+str(lagUntil))
@@ -209,8 +220,8 @@ class DeviceControl(threading.Thread):
             time.sleep(self.configurationProvider.getParam('device_poll_interval'))
 
         # turn off devices
-        stopDevice(GPIO_LIGHT)
-        stopDevice(GPIO_PUMP)
+        stopLight()
+        stopPump()
 
         print('DeviceControl stopped')
 
