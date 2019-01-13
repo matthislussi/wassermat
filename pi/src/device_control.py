@@ -202,7 +202,7 @@ class DeviceControl(threading.Thread):
             if self.configurationProvider.getParam('watering_threshold') == 'dynamic':
                 self.activatePumpDynamic(humidity)
             else:
-                self.activatePumpFixed(humidity)
+                self.activatePumpFixed()
             self.activateLight()
 
             self.dataProvider.setData(humidity, self.pumpActivated, self.lightActivated)
