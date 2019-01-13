@@ -106,12 +106,12 @@ class DeviceControl(threading.Thread):
         if (not self.pumpActivated):
             if (now > startTime and now < endTime):
                 startDevice(GPIO_PUMP)
-                self.lightActivated = True
+                self.pumpActivated = True
                 print('Pump activated at '+str(now))
         else:
             if (now < startTime or now > endTime):
                 stopDevice(GPIO_PUMP)
-                self.lightActivated = False
+                self.pumpActivated = False
                 print('Pump deactivated at '+str(now))
 
     def activatePumpDynamic(self, humidity):
