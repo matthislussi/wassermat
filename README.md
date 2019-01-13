@@ -128,16 +128,20 @@ pip install -r requirements.txt
 
 - create ```/lib/systemd/system/wassermat.service```
 ```
- [Unit]
- Description=wassermat Service
- After=multi-user.target
+[Unit]
+Description=wassermat Service
+After=multi-user.target
 
- [Service]
- Type=idle
- ExecStart=/home/pi/wassermat/wassermat.sh
+[Service]
+Type=idle
+ExecStart=/home/pi/wassermat/wassermat.sh
+WorkingDirectory=/home/pi/wassermat
+Restart=always
+User=pi
+Group=pi
 
- [Install]
- WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target
 ```
 
 - enable service
@@ -147,3 +151,5 @@ sudo systemctl daemon-reload
 sudo systemctl enable wassermat.service
 sudo reboot
 ```
+
+- logging: ```journalctl -u wassermat -b```

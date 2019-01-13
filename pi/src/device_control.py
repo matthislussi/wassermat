@@ -14,8 +14,9 @@ GPIO.setwarnings(False)
 GPIO.setup(GPIO_PUMP, GPIO.OUT)
 GPIO.setup(GPIO_LIGHT, GPIO.OUT)
 
-GPIO.output(GPIO_PUMP, GPIO.LOW)
-GPIO.output(GPIO_LIGHT, GPIO.LOW)
+# HIGH is off, LOW is on
+GPIO.output(GPIO_PUMP, GPIO.HIGH)
+GPIO.output(GPIO_LIGHT, GPIO.HIGH)
 
 # --- sensor SPI configuration (MCP3008) ---
 # see https://learn.adafruit.com/reading-a-analog-in-and-controlling-audio-volume-with-the-raspberry-pi/script
@@ -38,10 +39,10 @@ sensor_adc = 0;
 # --- END sensor SPI configuration (MCP3008) ---
 
 def stopDevice(channel):
-    GPIO.output(channel, GPIO.LOW)
+    GPIO.output(channel, GPIO.HIGH)
 
 def startDevice(channel):
-    GPIO.output(channel, GPIO.HIGH)
+    GPIO.output(channel, GPIO.LOW)
 
 class DeviceControl(threading.Thread):
     """The device control object polls the humidity sensor and controls pump and light activity based on these config values:
