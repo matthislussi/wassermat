@@ -101,7 +101,7 @@ class DeviceControl(threading.Thread):
         """Activate or deactivate pump based on configured start & duration time"""
         startTime = self.makeTime(self.configurationProvider.getParam('watering_start'))
         endTime = self.addSecs(startTime, self.configurationProvider.getParam('watering_duration'))
-        print('fixed watering scheme from '+str(startTime)+' to '+str(endTime))
+        # print('fixed watering scheme from '+str(startTime)+' to '+str(endTime))
         now = datetime.datetime.now().time()
         if (not self.pumpActivated):
             if (now > startTime and now < endTime):
