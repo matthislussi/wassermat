@@ -21,6 +21,6 @@ cd /home/pi/wassermat/pi
 source env/bin/activate
 cd src
 # logging: journalctl -u wassermat -b
-PYTHONUNBUFFERED="true" ./wassermat.py
+PYTHONUNBUFFERED="true" ./wassermat.py >> ../../wassermat.log 2>&1
 
 
