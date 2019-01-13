@@ -153,3 +153,26 @@ sudo reboot
 ```
 
 - logging: ```journalctl -u wassermat -b```
+
+### Devices
+```
+# GPIO.LOW = active, GPIO.LOW = inactive
+GPIO_PUMP = 8
+GPIO_LIGHT = 22
+```
+
+### Humidity Sensor
+
+- SPI port on the ADC to the Cobbler
+```
+SPICLK = 18
+SPIMISO = 23
+SPIMOSI = 24
+SPICS = 25
+
+sensor_adc = 0;
+```
+
+
+
+
