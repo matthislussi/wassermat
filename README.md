@@ -1,6 +1,6 @@
 ## Resources
 
-this repository: ```https://github.com/hlussi/wassermat.git```
+this repository: ```https://github.com/matthislussi/wassermat.git```
 
 
 ### GCP
@@ -106,7 +106,7 @@ run script ```pi/python3_install.sh```
 ### get sources
 ```
 sudo apt-get install git
-git clone https://github.com/hlussi/wassermat.git
+git clone https://github.com/matthislussi/wassermat.git
 cd wassermat
 ```
 
